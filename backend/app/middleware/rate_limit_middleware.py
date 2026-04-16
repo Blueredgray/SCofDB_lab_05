@@ -1,5 +1,6 @@
 """Rate limiting middleware для LAB 05 — Redis-based rate limiting для endpoint оплаты."""
 
+import logging
 import re
 from typing import Callable
 
@@ -9,6 +10,8 @@ from starlette.responses import JSONResponse
 
 from app.infrastructure.redis_client import get_redis
 from app.infrastructure.cache_keys import payment_rate_limit_key
+
+logger = logging.getLogger(__name__)
 
 
 # Паттерн для определения endpoint оплаты
@@ -56,38 +59,45 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         redis_key = payment_rate_limit_key(subject)
 
         # Шаг 3: Redis INCR + EXPIRE
-        redis = get_redis()
-        current_count = await redis.incr(redis_key)
+        try:
+            redis = get_redis()
+            current_count = await redis.incr(redis_key)
 
-        # Устанавливаем TTL только при первом запросе (INCR вернёт 1)
-        if current_count == 1:
-            await redis.expire(redis_key, self.window_seconds)
+            # Устанавливаем TTL только при первом запросе (INCR вернёт 1)
+            if current_count == 1:
+                await redis.expire(redis_key, self.window_seconds)
 
-        # Шаг 4: проверяем лимит
-        remaining = max(0, self.limit_per_window - current_count)
+            # Шаг 4: проверяем лимит
+            remaining = max(0, self.limit_per_window - current_count)
 
-        if current_count > self.limit_per_window:
-            # Превышен лимит — возвращаем 429
-            return JSONResponse(
-                status_code=429,
-                content={
-                    "detail": (
-                        f"Rate limit exceeded: {self.limit_per_window} requests "
-                        f"per {self.window_seconds} seconds"
-                    )
-                },
-                headers={
-                    "X-RateLimit-Limit": str(self.limit_per_window),
-                    "X-RateLimit-Remaining": "0",
-                    "Retry-After": str(self.window_seconds),
-                },
-            )
+            if current_count > self.limit_per_window:
+                # Превышен лимит — возвращаем 429
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "detail": (
+                            f"Rate limit exceeded: {self.limit_per_window} requests "
+                            f"per {self.window_seconds} seconds"
+                        )
+                    },
+                    headers={
+                        "X-RateLimit-Limit": str(self.limit_per_window),
+                        "X-RateLimit-Remaining": "0",
+                        "Retry-After": str(self.window_seconds),
+                    },
+                )
 
-        # Шаг 5: пропускаем запрос, добавляем заголовки
-        response = await call_next(request)
-        response.headers["X-RateLimit-Limit"] = str(self.limit_per_window)
-        response.headers["X-RateLimit-Remaining"] = str(remaining)
-        return response
+            # Шаг 5: пропускаем запрос, добавляем заголовки
+            response = await call_next(request)
+            response.headers["X-RateLimit-Limit"] = str(self.limit_per_window)
+            response.headers["X-RateLimit-Remaining"] = str(remaining)
+            return response
+        except Exception as e:
+            # Если Redis недоступен — логируем и пропускаем запрос без rate limiting.
+            # Это позволяет приложению работать корректно даже при сбое Redis
+            # (например, в тестовой среде без Redis-сервера).
+            logger.warning("Rate limiting skipped: Redis unavailable (%s)", e)
+            return await call_next(request)
 
     @staticmethod
     def _extract_subject(request: Request) -> str:
