@@ -2,31 +2,14 @@
 -- LAB 05: Событийная инвалидация кэша
 -- ============================================
 
--- TODO (опционально, но рекомендуется):
--- Создайте outbox-таблицу событий изменений заказа.
--- Это позволит:
--- 1) фиксировать факт изменения заказа в БД;
--- 2) отдельным обработчиком публиковать событие в Redis Pub/Sub
---    или напрямую инвалидировать cache keys.
-
--- Пример каркаса:
+-- Выбран вариант C: синхронная инвалидация в коде.
+-- При публикации OrderUpdatedEvent напрямую вызывается
+-- DEL order_card:v1:{order_id} и DEL catalog:v1 в Redis.
 --
--- CREATE TABLE cache_invalidation_events (
---     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
---     event_type VARCHAR(64) NOT NULL,         -- например ORDER_UPDATED
---     entity_type VARCHAR(64) NOT NULL,        -- ORDER
---     entity_id UUID NOT NULL,
---     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
---     processed BOOLEAN NOT NULL DEFAULT FALSE,
---     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
---     processed_at TIMESTAMP
--- );
---
--- CREATE INDEX idx_cache_events_unprocessed
---   ON cache_invalidation_events (processed, created_at);
+-- Для учебного проекта с одним экземпляром backend
+-- этого подхода достаточно. Outbox-таблица не требуется.
 
--- TODO:
--- Опишите в отчёте выбранный вариант:
--- A) DB outbox + background worker
--- B) синхронная публикация события после commit
--- C) прямой invalidate в одном месте кода (минимальный вариант)
+-- Альтернативные подходы (описаны в отчёте):
+-- A) DB outbox + background worker — для распределённых систем
+-- B) синхронная публикация через Redis Pub/Sub
+-- C) прямой invalidate в одном месте кода (выбран)

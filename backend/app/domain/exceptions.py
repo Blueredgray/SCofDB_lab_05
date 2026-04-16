@@ -1,14 +1,13 @@
-"""Domain exceptions for business rule violations."""
+"""Доменные исключения для нарушений бизнес-правил."""
 
 
 class DomainException(Exception):
-    """Base exception for domain errors."""
-
+    """Базовое исключение для доменных ошибок."""
     pass
 
 
 class InvalidEmailError(DomainException):
-    """Raised when email format is invalid."""
+    """Выбрасывается при неверном формате email."""
 
     def __init__(self, email: str):
         self.email = email
@@ -16,7 +15,7 @@ class InvalidEmailError(DomainException):
 
 
 class OrderAlreadyPaidError(DomainException):
-    """Raised when attempting to pay an already paid order."""
+    """Выбрасывается при попытке оплатить уже оплаченный заказ."""
 
     def __init__(self, order_id):
         self.order_id = order_id
@@ -24,7 +23,7 @@ class OrderAlreadyPaidError(DomainException):
 
 
 class OrderCancelledError(DomainException):
-    """Raised when attempting to modify a cancelled order."""
+    """Выбрасывается при попытке изменить отменённый заказ."""
 
     def __init__(self, order_id):
         self.order_id = order_id
@@ -32,7 +31,7 @@ class OrderCancelledError(DomainException):
 
 
 class InvalidQuantityError(DomainException):
-    """Raised when quantity is not positive."""
+    """Выбрасывается когда количество не положительное."""
 
     def __init__(self, quantity: int):
         self.quantity = quantity
@@ -40,7 +39,7 @@ class InvalidQuantityError(DomainException):
 
 
 class InvalidPriceError(DomainException):
-    """Raised when price is negative."""
+    """Выбрасывается когда цена отрицательная."""
 
     def __init__(self, price):
         self.price = price
@@ -48,7 +47,7 @@ class InvalidPriceError(DomainException):
 
 
 class InvalidAmountError(DomainException):
-    """Raised when amount is negative."""
+    """Выбрасывается когда сумма отрицательная."""
 
     def __init__(self, amount):
         self.amount = amount
@@ -56,7 +55,7 @@ class InvalidAmountError(DomainException):
 
 
 class UserNotFoundError(DomainException):
-    """Raised when user is not found."""
+    """Выбрасывается когда пользователь не найден."""
 
     def __init__(self, user_id):
         self.user_id = user_id
@@ -64,7 +63,7 @@ class UserNotFoundError(DomainException):
 
 
 class OrderNotFoundError(DomainException):
-    """Raised when order is not found."""
+    """Выбрасывается когда заказ не найден."""
 
     def __init__(self, order_id):
         self.order_id = order_id
@@ -72,7 +71,7 @@ class OrderNotFoundError(DomainException):
 
 
 class EmailAlreadyExistsError(DomainException):
-    """Raised when email is already registered."""
+    """Выбрасывается когда email уже зарегистрирован."""
 
     def __init__(self, email: str):
         self.email = email

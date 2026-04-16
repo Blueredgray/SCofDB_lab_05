@@ -4,8 +4,7 @@
 -- LAB 05: Проверка "истины" в БД для карточки заказа
 -- ============================================
 --
--- TODO:
--- Замените {{order_id}} на UUID заказа, который тестируете.
+-- Замените ORDER_ID_HERE на UUID заказа, который тестируете.
 
 SELECT
     o.id,
@@ -14,7 +13,7 @@ SELECT
     o.total_amount,
     o.created_at
 FROM orders o
-WHERE o.id = '{{order_id}}'::uuid;
+WHERE o.id = 'ORDER_ID_HERE'::uuid;
 
 SELECT
     oi.order_id,
@@ -22,5 +21,5 @@ SELECT
     oi.price,
     oi.quantity
 FROM order_items oi
-WHERE oi.order_id = '{{order_id}}'::uuid
+WHERE oi.order_id = 'ORDER_ID_HERE'::uuid
 ORDER BY oi.product_name;

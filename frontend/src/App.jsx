@@ -254,7 +254,7 @@ function App() {
 
   return (
     <div className="container">
-      <h1>🛒 Marketplace</h1>
+      <h1>Marketplace</h1>
       
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
@@ -277,7 +277,7 @@ function App() {
           onClick={() => setActiveTab('test')}
           style={{ background: activeTab === 'test' ? '#8b5cf6' : '', borderColor: '#8b5cf6' }}
         >
-          🧪 Test Concurrent
+          Test Concurrent
         </div>
       </div>
 
@@ -373,7 +373,7 @@ function App() {
                     <option value="">Select order...</option>
                     {orders.filter(o => o.status === 'created').map((order) => (
                       <option key={order.id} value={order.id}>
-                        Order #{order.id.slice(0, 8)} - {order.total_amount}₽
+                        Order #{order.id.slice(0, 8)} - {order.total_amount}
                       </option>
                     ))}
                   </select>
@@ -429,7 +429,7 @@ function App() {
                     </span>
                   </div>
                   <div>
-                    <strong>{order.total_amount}₽</strong>
+                    <strong>{order.total_amount}</strong>
                   </div>
                 </div>
                 
@@ -437,8 +437,8 @@ function App() {
                   <div className="order-items">
                     {order.items.map((item) => (
                       <div key={item.id} className="order-item">
-                        <span>{item.product_name} × {item.quantity}</span>
-                        <span>{item.subtotal}₽</span>
+                        <span>{item.product_name} x {item.quantity}</span>
+                        <span>{item.subtotal}</span>
                       </div>
                     ))}
                   </div>
@@ -464,7 +464,7 @@ function App() {
                     </>
                   )}
                   {order.status === 'paid' && (
-                    <span style={{ color: '#666' }}>✓ Paid - awaiting shipment</span>
+                    <span style={{ color: '#666' }}>Paid - awaiting shipment</span>
                   )}
                 </div>
               </div>
@@ -476,27 +476,27 @@ function App() {
       {activeTab === 'test' && (
         <div>
           <div className="card" style={{ background: '#fef3c7', borderColor: '#f59e0b' }}>
-            <h3 style={{ margin: 0, color: '#92400e' }}>⚠️ Демонстрационная страница</h3>
+            <h3 style={{ margin: 0, color: '#92400e' }}>Demonstration page</h3>
             <p style={{ marginBottom: 0, color: '#78350f', fontSize: '14px' }}>
-              Эта страница позволяет протестировать два режима оплаты:<br/>
-              • <strong>unsafe</strong> - ломается при конкурентных запросах (READ COMMITTED без FOR UPDATE)<br/>
-              • <strong>safe</strong> - работает корректно (REPEATABLE READ + FOR UPDATE)
+              This page allows testing two payment modes:<br/>
+              - <strong>unsafe</strong> - fails with concurrent requests (READ COMMITTED without FOR UPDATE)<br/>
+              - <strong>safe</strong> - works correctly (REPEATABLE READ + FOR UPDATE)
             </p>
           </div>
 
           <div className="grid">
             <div className="card">
-              <h2>Шаг 1: Создать тестовый заказ</h2>
+              <h2>Step 1: Create test order</h2>
               <button 
                 className="btn btn-primary" 
                 onClick={createTestOrder}
                 disabled={loading}
               >
-                ➕ Создать тестовый заказ
+                Create test order
               </button>
               {testOrderId && (
                 <div style={{ marginTop: '12px', padding: '12px', background: '#d1fae5', borderRadius: '4px' }}>
-                  <strong style={{ color: '#065f46' }}>✅ Заказ создан:</strong>
+                  <strong style={{ color: '#065f46' }}>Order created:</strong>
                   <code style={{ marginLeft: '8px', background: '#a7f3d0', padding: '4px 8px', borderRadius: '4px' }}>
                     {testOrderId.slice(0, 8)}...
                   </code>
@@ -505,19 +505,19 @@ function App() {
             </div>
 
             <div className="card">
-              <h2>Шаг 2: Запустить тест</h2>
+              <h2>Step 2: Run test</h2>
               <div className="form-group">
                 <label>Order ID:</label>
                 <input
                   type="text"
                   value={testOrderId}
                   onChange={(e) => setTestOrderId(e.target.value)}
-                  placeholder="Введите Order ID или создайте новый"
+                  placeholder="Enter Order ID or create a new one"
                 />
               </div>
 
               <div className="form-group">
-                <label>Режим тестирования:</label>
+                <label>Test mode:</label>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                     <input
@@ -527,7 +527,7 @@ function App() {
                       onChange={(e) => setTestMode(e.target.value)}
                       style={{ marginRight: '8px' }}
                     />
-                    <span style={{ color: '#dc2626', fontWeight: 'bold' }}>❌ Unsafe (с проблемой)</span>
+                    <span style={{ color: '#dc2626', fontWeight: 'bold' }}>Unsafe (with problem)</span>
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                     <input
@@ -537,7 +537,7 @@ function App() {
                       onChange={(e) => setTestMode(e.target.value)}
                       style={{ marginRight: '8px' }}
                     />
-                    <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅ Safe (без проблемы)</span>
+                    <span style={{ color: '#16a34a', fontWeight: 'bold' }}>Safe (without problem)</span>
                   </label>
                 </div>
               </div>
@@ -548,14 +548,14 @@ function App() {
                 onClick={testConcurrentPayment}
                 disabled={loading || !testOrderId}
               >
-                🚀 Запустить 2 параллельные оплаты
+                Run 2 concurrent payments
               </button>
             </div>
           </div>
 
           {testResult && (
             <div className="card">
-              <h2>Результаты теста</h2>
+              <h2>Test results</h2>
               
               <div 
                 className="card" 
@@ -578,30 +578,30 @@ function App() {
                   <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#374151' }}>
                     {testResult.summary.total_attempts}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#6b7280' }}>Попыток оплаты</div>
+                  <div style={{ fontSize: '14px', color: '#6b7280' }}>Payment attempts</div>
                 </div>
                 <div className="card" style={{ background: '#d1fae5', textAlign: 'center' }}>
                   <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#16a34a' }}>
                     {testResult.summary.successful}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#6b7280' }}>Успешных</div>
+                  <div style={{ fontSize: '14px', color: '#6b7280' }}>Successful</div>
                 </div>
                 <div className="card" style={{ background: '#fee2e2', textAlign: 'center' }}>
                   <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#dc2626' }}>
                     {testResult.summary.failed}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#6b7280' }}>Неудачных</div>
+                  <div style={{ fontSize: '14px', color: '#6b7280' }}>Failed</div>
                 </div>
                 <div className="card" style={{ background: '#dbeafe', textAlign: 'center' }}>
                   <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1e40af' }}>
                     {testResult.summary.payment_count_in_history}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#6b7280' }}>В истории БД</div>
+                  <div style={{ fontSize: '14px', color: '#6b7280' }}>In DB history</div>
                 </div>
               </div>
 
               <div style={{ marginTop: '16px' }}>
-                <h3>Детали попыток:</h3>
+                <h3>Attempt details:</h3>
                 {testResult.results.map((attempt, i) => (
                   <div 
                     key={i}
@@ -613,7 +613,7 @@ function App() {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 'bold' }}>Попытка {attempt.attempt}</span>
+                      <span style={{ fontWeight: 'bold' }}>Attempt {attempt.attempt}</span>
                       <span 
                         style={{
                           padding: '4px 12px',
@@ -624,7 +624,7 @@ function App() {
                           color: 'white'
                         }}
                       >
-                        {attempt.success ? '✅ Успешно' : '❌ Ошибка'}
+                        {attempt.success ? 'Success' : 'Error'}
                       </span>
                     </div>
                     {attempt.error && (
@@ -638,7 +638,7 @@ function App() {
 
               {testResult.history && testResult.history.length > 0 && (
                 <div style={{ marginTop: '16px' }}>
-                  <h3>История оплат в БД:</h3>
+                  <h3>Payment history in DB:</h3>
                   <table>
                     <thead>
                       <tr>
@@ -665,15 +665,15 @@ function App() {
           )}
 
           <div className="card" style={{ background: '#eff6ff', borderColor: '#3b82f6' }}>
-            <h3 style={{ marginTop: 0, color: '#1e40af' }}>📖 Как использовать:</h3>
+            <h3 style={{ marginTop: 0, color: '#1e40af' }}>How to use:</h3>
             <ol style={{ color: '#1e3a8a', fontSize: '14px' }}>
-              <li>Создайте тестовый заказ</li>
-              <li>Выберите режим: <strong>unsafe</strong> (демонстрация проблемы) или <strong>safe</strong> (решение)</li>
-              <li>Нажмите "Запустить 2 параллельные оплаты"</li>
-              <li>Проверьте результаты:
+              <li>Create a test order</li>
+              <li>Select mode: <strong>unsafe</strong> (problem demo) or <strong>safe</strong> (solution)</li>
+              <li>Click "Run 2 concurrent payments"</li>
+              <li>Check results:
                 <ul style={{ marginTop: '4px' }}>
-                  <li><strong>Unsafe:</strong> заказ будет оплачен дважды ⚠️</li>
-                  <li><strong>Safe:</strong> заказ будет оплачен только один раз ✅</li>
+                  <li><strong>Unsafe:</strong> order will be paid twice</li>
+                  <li><strong>Safe:</strong> order will be paid only once</li>
                 </ul>
               </li>
             </ol>

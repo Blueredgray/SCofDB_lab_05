@@ -1,12 +1,13 @@
 """API endpoints для тестирования конкурентных оплат."""
 
 import uuid
+import asyncio
 from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.db import get_db
+from app.infrastructure.db import get_db, SessionLocal
 from app.application.payment_service import PaymentService
 
 
@@ -52,19 +53,7 @@ async def pay_order(
     request: PaymentRequest,
     session: AsyncSession = Depends(get_db)
 ):
-    """
-    Оплатить заказ.
-    
-    Параметры:
-    - order_id: ID заказа для оплаты
-    - mode: "safe" (с блокировками) или "unsafe" (без блокировок)
-    
-    Возвращает:
-    - success: true если оплата прошла успешно
-    - message: описание результата
-    - order_id: ID заказа
-    - status: текущий статус заказа
-    """
+    """Оплатить заказ."""
     try:
         service = PaymentService(session)
         
@@ -94,14 +83,7 @@ async def get_payment_history(
     order_id: uuid.UUID,
     session: AsyncSession = Depends(get_db)
 ):
-    """
-    Получить историю оплат для заказа.
-    
-    Возвращает:
-    - order_id: ID заказа
-    - payment_count: количество попыток оплаты
-    - payments: список записей об оплате с временными метками
-    """
+    """Получить историю оплат для заказа."""
     try:
         service = PaymentService(session)
         history = await service.get_payment_history(order_id)
@@ -122,17 +104,7 @@ async def retry_demo_payment(
     session: AsyncSession = Depends(get_db)
 ):
     """
-    LAB 04: Endpoint для сценария \"запрос на оплату -> обрыв сети -> повторный запрос\".
-
-    Как использовать:
-    1) Вызвать endpoint 2 раза для одного order_id.
-    2) Во втором вызове:
-       - с тем же Idempotency-Key ожидается кэшированный ответ (после реализации middleware);
-       - без ключа (или с новым ключом) возможна повторная оплата в режиме unsafe.
-
-    mode:
-    - unsafe: вызывает pay_order_unsafe()
-    - for_update: вызывает pay_order_safe() для сравнения с решением lab_02
+    LAB 04: Endpoint для сценария "запрос на оплату -> обрыв сети -> повторный запрос".
     """
     service = PaymentService(session)
     try:
@@ -166,71 +138,46 @@ async def test_concurrent_payment(
     """
     ДЕМОНСТРАЦИОННЫЙ endpoint
     
-    ⚠️ Этот endpoint СПЕЦИАЛЬНО создан для демонстрации race condition!
+    Этот endpoint СПЕЦИАЛЬНО создан для демонстрации race condition!
     В реальном приложении такого быть не должно.
     
-    Параметры:
-    - order_id: ID заказа
-    - mode: "safe" или "unsafe"
-    
-    Возвращает результаты обеих попыток оплаты.
+    Запускает две попытки оплаты ПАРАЛЛЕЛЬНО и возвращает результаты обеих.
     """
-    import asyncio
-    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession as AS
-    from sqlalchemy.orm import sessionmaker
-    
-    # Получить DATABASE_URL из настроек
-    from app.infrastructure.db import DATABASE_URL
-    
-    # Создать два независимых соединения
-    engine1 = create_async_engine(DATABASE_URL)
-    engine2 = create_async_engine(DATABASE_URL)
-    
-    SessionLocal1 = sessionmaker(engine1, class_=AS, expire_on_commit=False)
-    SessionLocal2 = sessionmaker(engine2, class_=AS, expire_on_commit=False)
-    
-    async def attempt_payment_1():
-        """Первая попытка оплаты."""
-        async with SessionLocal1() as session1:
+    start_barrier = asyncio.Barrier(2)
+
+    async def attempt_1():
+        async with SessionLocal() as s1:
             try:
-                service = PaymentService(session1)
+                svc = PaymentService(s1)
                 if request.mode == "safe":
-                    result = await service.pay_order_safe(request.order_id)
+                    result = await svc.pay_order_safe(request.order_id, start_barrier)
                 else:
-                    result = await service.pay_order_unsafe(request.order_id)
+                    result = await svc.pay_order_unsafe(request.order_id, start_barrier)
                 return {"success": True, "result": result, "attempt": 1}
             except Exception as e:
                 return {"success": False, "error": str(e), "attempt": 1}
-    
-    async def attempt_payment_2():
-        """Вторая попытка оплаты."""
-        async with SessionLocal2() as session2:
+
+    async def attempt_2():
+        async with SessionLocal() as s2:
             try:
-                service = PaymentService(session2)
+                svc = PaymentService(s2)
                 if request.mode == "safe":
-                    result = await service.pay_order_safe(request.order_id)
+                    result = await svc.pay_order_safe(request.order_id, start_barrier)
                 else:
-                    result = await service.pay_order_unsafe(request.order_id)
+                    result = await svc.pay_order_unsafe(request.order_id, start_barrier)
                 return {"success": True, "result": result, "attempt": 2}
             except Exception as e:
                 return {"success": False, "error": str(e), "attempt": 2}
     
-    # Запустить две попытки ПАРАЛЛЕЛЬНО
     results = await asyncio.gather(
-        attempt_payment_1(),
-        attempt_payment_2(),
+        attempt_1(),
+        attempt_2(),
         return_exceptions=True
     )
-    
-    # Закрыть engines
-    await engine1.dispose()
-    await engine2.dispose()
-    
-    # Получить историю оплат
+
     service = PaymentService(session)
     history = await service.get_payment_history(request.order_id)
     
-    # Подсчитать успешные и неудачные попытки
     success_count = sum(1 for r in results if isinstance(r, dict) and r.get("success"))
     error_count = sum(1 for r in results if isinstance(r, dict) and not r.get("success"))
     
@@ -247,8 +194,8 @@ async def test_concurrent_payment(
         },
         "history": history,
         "explanation": (
-            f"⚠️ RACE CONDITION! Order was paid {len(history)} times!" 
+            f"RACE CONDITION! Order was paid {len(history)} times!" 
             if len(history) > 1 
-            else f"✅ No race condition. Order was paid {len(history)} time(s)."
+            else f"No race condition. Order was paid {len(history)} time(s)."
         )
     }

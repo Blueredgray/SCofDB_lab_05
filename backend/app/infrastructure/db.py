@@ -1,4 +1,4 @@
-"""Database connection and session management."""
+"""Подключение к базе данных и управление сессиями."""
 
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
@@ -13,7 +13,7 @@ SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSe
 
 
 async def get_db() -> AsyncSession:
-    """Dependency for getting database session."""
+    """Dependency для получения сессии БД."""
     async with SessionLocal() as session:
         try:
             yield session
